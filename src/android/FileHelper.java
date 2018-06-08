@@ -26,6 +26,7 @@ import android.os.Build;
 import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
+import android.text.TextUtils;
 import android.webkit.MimeTypeMap;
 
 import org.apache.cordova.CordovaInterface;
@@ -97,10 +98,19 @@ public class FileHelper {
             else if (isDownloadsDocument(uri)) {
 
                 final String id = DocumentsContract.getDocumentId(uri);
-                final Uri contentUri = ContentUris.withAppendedId(
-                        Uri.parse("content://downloads/public_downloads"), Long.valueOf(id));
+                if (!TextUtils.isEmpty(id)) {
+                    if (id.startsWith("raw:")) {
+                        return id.replaceFirst("raw:", "");
+                    }
+                    try {
+                        final Uri contentUri = ContentUris.withAppendedId(
+                                Uri.parse("content://downloads/public_downloads"), Long.valueOf(id));
 
-                return getDataColumn(context, contentUri, null, null);
+                        return getDataColumn(context, contentUri, null, null);
+                    } catch (NumberFormatException e) {
+                        return null;
+                    }
+                }
             }
             // MediaProvider
             else if (isMediaDocument(uri)) {
@@ -225,7 +235,7 @@ public class FileHelper {
         }
         return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
     }
-    
+
     /**
      * Returns the mime type of the data specified by the given URI string.
      *
